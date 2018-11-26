@@ -1,0 +1,56 @@
+---
+title: "Markdown"
+author: "Fayette"
+date: "19 november 2018"
+output:
+  html_document: default
+---
+# Sample 100 samples
+
+Here I take 100 samples of `n=30` from a standard normal distribution.
+```{r include = TRUE}
+library(ggplot2)
+library(xtable)
+library(knitr)
+set.seed <- 1305
+n <- 30
+Samples <- lapply(1:100, function(x){rnorm(n)})
+```
+
+# Computation of statistics
+```{r}
+
+AllStats <- function(x){
+  n <- length(x)
+  Mean <- mean(x)
+  Bias <- abs(Mean-0)
+  StdE <- sd(x)/sqrt(n)
+  Low <- Mean - 1.96*StdE
+  Up <- Mean + 1.96*StdE
+  Miss <- ifelse(Low > 0 || Up < 0, FALSE, TRUE)
+  return(c("Bias" = Bias, "Standard Error" = StdE, 
+           "Lower bound" = Low, "Upper bound" = Up,
+           "Mean" = Mean, "Contains0" = Miss))
+}
+output <- t(sapply(Samples, AllStats))
+```
+
+# Plot making
+```{r}
+df <- data.frame(cbind("Sample" = 1:100, output))
+df$Contains0 <- as.factor(df$Contains0)
+
+x <- ggplot(data = df, aes(x = Sample, ymin = Lower.bound, ymax = Upper.bound))
+x + geom_errorbar(aes(color = Contains0)) + geom_hline(aes(yintercept = 0))
+
+```
+# Table
+
+```{r}
+tab.dat <- df[which(df$Contains0 == "0"),1:6]
+SamplesOut <- as.data.frame(Samples[which(df$Contains0 == "0")])
+
+kable(tab.dat, digits = 3)
+kable(SamplesOut, col.names = paste(which(df$Contains0 == "0")), digits = 3)
+```
+
